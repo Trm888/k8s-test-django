@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-django-app
+  labels:
+    app: my-ks8-django
+spec:
+  selector:
+    matchLabels:
+      project: django
+  template:
+    metadata:
+      labels:
+        project: django
+    spec:
+      containers:
+        - name: django
+          image: django_app
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          env:
+            - name: SECRET_KEY
+              valueFrom:
+                configMapKeyRef:
+                  name: django-config
+                  key: SECRET_KEY
+            - name: DATABASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: django-config
+                  key: DATABASE_URL
+            - name: ALLOWED_HOSTS
+              valueFrom:
+                configMapKeyRef:
+                  name: django-config
+                  key: ALLOWED_HOSTS
+            - name: DEBUG
+              valueFrom:
+                configMapKeyRef:
+                  name: django-config
+                  key: DEBUG
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: django-service
+  labels:
+    app: django
+spec:
+    type: LoadBalancer
+    selector:
+        project: django
+    ports:
+      - name: django-port
+        protocol: TCP
+        port: 80
+        targetPort: 80
+        nodePort: 30000

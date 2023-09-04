@@ -32,3 +32,46 @@ $ docker-compose run web ./manage.py createsuperuser
 `ALLOWED_HOSTS` -- настройка Django со списком разрешённых адресов. Если запрос прилетит на другой адрес, то сайт ответит ошибкой 400. Можно перечислить несколько адресов через запятую, например `127.0.0.1,192.168.0.1,site.test`. [Документация Django](https://docs.djangoproject.com/en/3.2/ref/settings/#allowed-hosts).
 
 `DATABASE_URL` -- адрес для подключения к базе данных PostgreSQL. Другие СУБД сайт не поддерживает. [Формат записи](https://github.com/jacobian/dj-database-url#url-schema).
+
+### Запуск приложения в Kubernetes
+
+Запустите minikube в virtualbox:
+```
+minikube start --driver=virtualbox
+```
+Включите ingress:
+```
+minikube addons enable ingress
+```
+
+Заполните манифест файл ConfigMap.yaml:
+
+`SECRET_KEY`
+
+`DEBUG`
+
+`ALLOWED_HOSTS`
+
+`DATABASE_URL`
+
+установить Helm
+
+Добавите репозиторий Bitnami
+```
+helm repo add bitnami https://charts.bitnami.com/bitnami
+```
+Установите PostgreSQL с определенным паролем и определенным именем пользователя:
+```
+helm install my-postgresql bitnami/postgresql --set postgresqlPassword=mysecretpassword,postgresqlUsername=myuser
+```
+Применяем манифесты:
+```
+kubectl apply -f django-app.yaml
+kubectl apply -f ingress.yaml
+kubectl apply -f clearsessions-cronjob.yaml
+```
+
+
+
+
+

@@ -33,7 +33,7 @@ $ docker-compose run web ./manage.py createsuperuser
 
 `DATABASE_URL` -- адрес для подключения к базе данных PostgreSQL. Другие СУБД сайт не поддерживает. [Формат записи](https://github.com/jacobian/dj-database-url#url-schema).
 
-### Запуск приложения в Kubernetes
+### Запуск приложения в Kubernetes minikube
 
 Запустите minikube в virtualbox:
 ```
@@ -66,12 +66,59 @@ helm install my-postgresql bitnami/postgresql --set postgresqlPassword=mysecretp
 ```
 Применяем манифесты:
 ```
+kubectl apply -f configmap.yaml
 kubectl apply -f django-app.yaml
-kubectl apply -f ingress.yaml
+kubectl apply -f ingress-hosts.yaml
 kubectl apply -f clearsessions-cronjob.yaml
 ```
 
+### Запуск приложения с использованием production-кластера
+
+Работающая версия сайта: [edu-elated-rosalind.sirius-k8s.dvmn.org](https://edu-elated-rosalind.sirius-k8s.dvmn.org)
 
 
+Переключаемся на кластер
 
+```commandline
+kubectl config use-context your_klaster
+```
+установить Helm
 
+Добавите репозиторий Bitnami
+```
+helm repo add bitnami https://charts.bitnami.com/bitnami
+```
+
+Установите PostgreSQL:
+
+```
+helm install my-postgresql bitnami/postgresql --namespace your_namespace
+```
+
+Получаем пароль от бд:
+для Windows:
+
+```
+$jsonOutput = kubectl get secret --namespace your_namespace my-postgresql -o json | ConvertFrom-Json
+$passwordBase64 = $jsonOutput.data.'postgres-password'
+$POSTGRES_PASSWORD = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($passwordBase64))
+Write-Output $POSTGRES_PASSWORD
+```
+
+Для Linux:
+```
+encoded_password=$(kubectl get secret my-postgresql -o json | jq -r '.data["postgres-password"]')
+decoded_password=$(echo $encoded_password | base64 --decode)
+echo $decoded_password
+```
+Полученный пароль используем в ConfigMap.yaml в качестве значения переменной DATABASE_URL
+
+Применяем манифесты:
+```
+kubectl apply -f configmap.yaml
+kubectl apply -f django-app.yaml
+kubectl apply -f ingress-hosts.yaml
+kubectl apply -f clearsessions-cronjob.yaml
+```
+
+Эти команды создадут Deployment, Service и Ingress для вашего приложения в вашем кластере Kubernetes.

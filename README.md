@@ -96,6 +96,7 @@ helm install my-postgresql bitnami/postgresql --namespace your_namespace
 ```
 
 Получаем пароль от бд:
+
 для Windows:
 
 ```
